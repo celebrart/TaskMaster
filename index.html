@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport bloqueado para evitar zoom acidental no celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Configurações do PWA -->
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="manifest.json">
+    
+    <title>TaskMaster Pro | Gerenciamento</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sidebar / Navegação -->
+    <aside class="sidebar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <h2>TaskMaster</h2>
+        </div>
+        <nav>
+            <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="tasks">Minhas Tarefas</button>
+            <button class="nav-btn" data-target="calendar">Calendário</button>
+        </nav>
+        <div class="sidebar-bottom">
+            <button id="themeToggle" class="btn-secondary">Alternar Tema</button>
+        </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Pesquisar tarefas (atalho: /)...">
+            </div>
+            <div class="actions">
+                <button id="btnExportCSV" class="btn-secondary">CSV</button>
+                <button id="btnExportPDF" class="btn-secondary">PDF</button>
+                <button id="btnNewTask" class="btn-primary">+ Nova Tarefa</button>
+            </div>
+        </header>
+
+        <!-- View: Dashboard -->
+        <section id="dashboard" class="view active">
+            <div class="header-title">
+                <h1>Visão Geral</h1>
+                <p id="currentDateDisplay"></p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total</h3><p id="statTotal">0</p></div>
+                <div class="stat-card blue"><h3>Concluídas</h3><p id="statCompleted">0</p></div>
+                <div class="stat-card yellow"><h3>Pendentes</h3><p id="statPending">0</p></div>
+                <div class="stat-card red"><h3>Vencidas</h3><p id="statOverdue">0</p></div>
+                <div class="stat-card green"><h3>Para Hoje</h3><p id="statToday">0</p></div>
+            </div>
+            <div class="progress-section">
+                <h3>Progresso Geral</h3>
+                <div class="progress-bar-bg">
+                    <div id="generalProgress" class="progress-bar-fill"></div>
+                </div>
+                <span id="progressText">0%</span>
+            </div>
+        </section>
+
+        <!-- View: Tarefas -->
+        <section id="tasks" class="view">
+            <div class="header-title">
+                <h1>Gerenciamento de Tarefas</h1>
+            </div>
+            <div class="controls-bar">
+                <select id="filterSelect">
+                    <option value="all">Todas as Tarefas</option>
+                    <option value="today">Hoje</option>
+                    <option value="week">Esta Semana</option>
+                    <option value="pending">Pendentes</option>
+                    <option value="completed">Concluídas</option>
+                    <option value="overdue">Vencidas</option>
+                    <option value="high">Alta Prioridade/Urgente</option>
+                </select>
+                <select id="sortSelect">
+                    <option value="date-asc">Data (Mais próximas)</option>
+                    <option value="date-desc">Data (Mais distantes)</option>
+                    <option value="priority">Prioridade</option>
+                    <option value="created-desc">Mais recentes</option>
+                </select>
+                <button id="btnMarkAll" class="btn-secondary">Concluir Todas</button>
+                <button id="btnClearAll" class="btn-danger">Excluir Todas</button>
+            </div>
+            <div class="tasks-grid" id="tasksContainer">
+                <!-- Cards renderizados via JS -->
+            </div>
+        </section>
+
+        <!-- View: Calendário -->
+        <section id="calendar" class="view">
+            <div class="header-title">
+                <h1>Calendário</h1>
+                <div class="calendar-controls">
+                    <button id="prevMonth" class="btn-secondary">&lt;</button>
+                    <h2 id="monthDisplay">Mês Ano</h2>
+                    <button id="nextMonth" class="btn-secondary">&gt;</button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="day-name">Dom</div><div class="day-name">Seg</div><div class="day-name">Ter</div>
+                <div class="day-name">Qua</div><div class="day-name">Qui</div><div class="day-name">Sex</div><div class="day-name">Sáb</div>
+                <div id="calendarDays" class="days-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Nova/Editar Tarefa -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nova Tarefa</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label>Título *</label>
+                    <input type="text" id="taskTitle" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <input type="text" id="taskCategory" placeholder="Ex: Trabalho, Estudo...">
+                    </div>
+                    <div class="form-group">
+                        <label>Prioridade</label>
+                        <select id="taskPriority">
+                            <option value="Baixa">Baixa</option>
+                            <option value="Média" selected>Média</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Urgente">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data Limite *</label>
+                        <input type="date" id="taskDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Limite</label>
+                        <input type="time" id="taskTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descrição & Observações</label>
+                    <textarea id="taskDesc" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelModal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sistema de Notificações (Toast) -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="script.js"></script>
+    
+    <!-- Registro do Service Worker para o PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registrado!', reg))
+            .catch(err => console.error('Erro no Service Worker', err));
+        });
+      }
+    </script>
+</body>
+</html>
